@@ -1,16 +1,8 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from xgboost import XGBRegressor
-from sklearn.metrics import r2_score
+import joblib
 
+# 1. KONFIGURASI HALAMAN 
 st.set_page_config(
     page_title="Laptop Price Estimator", 
     page_icon="💻", 
@@ -18,6 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 2. LOAD DATA & MODEL
 @st.cache_data
 def load_data():
     data = pd.read_csv('laptops.csv')
@@ -26,58 +19,13 @@ def load_data():
     return data
 
 @st.cache_resource
-def train_and_get_model(_data):
-    df_train = _data.copy()
-    df_train['Price_USD'] = df_train['Final Price'] * 1.08
-
-    X = df_train[['Status', 'Brand', 'Model', 'CPU', 'RAM', 'Storage', 'Storage type', 'GPU', 'Screen', 'Touch']]
-    y = df_train['Price_USD']
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    numeric_features = ['RAM', 'Storage', 'Screen']
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
-    ])
-
-    categorical_features = ['Status', 'Brand', 'Model', 'CPU', 'Storage type', 'GPU', 'Touch']
-    categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value='None/Integrated')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numeric_transformer, numeric_features),
-            ('cat', categorical_transformer, categorical_features)
-        ])
-
-    models = {
-        "Linear Regression": LinearRegression(),
-        "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42),
-        "XGBoost": XGBRegressor(n_estimators=100, random_state=42, objective='reg:squarederror')
-    }
-
-    best_model = None
-    best_r2 = -float('inf')
-
-    for name, model_algorithm in models.items():
-        pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model_algorithm)])
-        pipeline.fit(X_train, y_train)
-        
-        y_pred = pipeline.predict(X_test)
-        r2 = r2_score(y_test, y_pred)
-        
-        if r2 > best_r2:
-            best_r2 = r2
-            best_model = pipeline
-            
-    return best_model
+def load_model():
+    return joblib.load('best_laptop_price_model.pkl')
 
 df = load_data()
-model = train_and_get_model(df)
+model = load_model()
 
+# 3. SIDEBAR (AREA INPUT SPESIFIKASI)
 st.sidebar.title("⚙️ Spesifikasi Laptop")
 st.sidebar.markdown("Pilih spesifikasi untuk melihat estimasi harga pasar.")
 
@@ -136,6 +84,7 @@ touch_list = sorted(current_df['Touch'].dropna().unique().tolist())
 if not touch_list: touch_list = df['Touch'].unique().tolist()
 touch = st.sidebar.radio("Layar Sentuh?", touch_list, horizontal=True)
 
+# 4. AREA UTAMA
 st.title("💻 Laptop Price Estimator")
 st.markdown("""
 Pilih spesifikasi di menu samping, dan sistem kami akan membantu Anda menemukan estimasi harga laptop.
