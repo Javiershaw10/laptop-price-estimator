@@ -66,14 +66,10 @@ with col4:
 # Baris 3
 col5, col6 = st.columns(2)
 with col5:
-    ram_list = sorted(current_df['RAM'].dropna().unique().tolist())
-    if not ram_list: ram_list = [8]
-    ram = st.selectbox("⚡ RAM (GB)", ram_list)
+    ram = st.number_input("⚡ RAM (GB)", min_value=2, max_value=128, value=8, step=1)
 
 with col6:
-    storage_list = sorted(current_df['Storage'].dropna().unique().tolist())
-    if not storage_list: storage_list = [512]
-    storage = st.selectbox("💾 Kapasitas Storage (GB)", storage_list)
+    storage = st.number_input("💾 Kapasitas Storage (GB)", min_value=64, max_value=4096, value=512, step=128)
 
 # Baris 4
 col7, col8 = st.columns(2)
@@ -83,9 +79,7 @@ with col7:
     storage_type = st.selectbox("💽 Tipe Penyimpanan", storage_type_list)
 
 with col8:
-    screen_list = sorted(current_df['Screen'].dropna().unique().tolist())
-    if not screen_list: screen_list = [15.6]
-    screen = st.selectbox("🖥️ Ukuran Layar (Inci)", screen_list)
+    screen = st.number_input("🖥️ Ukuran Layar (Inci)", min_value=10.0, max_value=24.0, value=15.6, step=0.1)
 
 st.write("")
 _, center_col, _ = st.columns([1, 2, 1])
